@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f0f1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>DevTasker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1 class="logo">DevTasker</h1>
+            <div class="progress-wrapper">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <span class="progress-text" id="progressText">0/0 završeno</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <form class="add-task-form" id="addTaskForm">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        id="taskInput" 
+                        placeholder="Unesi novi zadatak..." 
+                        autocomplete="off"
+                        maxlength="120"
+                    >
+                    <select id="prioritySelect">
+                        <option value="hitno">Hitno</option>
+                        <option value="bitno">Bitno</option>
+                        <option value="moze">Može da čeka</option>
+                    </select>
+                </div>
+                <button type="submit" class="add-btn" id="addBtn" aria-label="Dodaj zadatak">
+                    <span class="add-icon">➕</span>
+                    Dodaj
+                </button>
+            </form>
+
+            <ul class="task-list" id="taskList">
+                <!-- Zadaci se dinamički dodaju -->
+            </ul>
+
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">📋</div>
+                <p>Nema zadataka. Dodaj prvi!</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
