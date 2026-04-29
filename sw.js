@@ -1,4 +1,4 @@
-const CACHE_NAME = "devtasker-v2";
+const CACHE_NAME = "devtasker-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,10 +24,31 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  const isNavigation = request.mode === "navigate";
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const cloned = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", cloned));
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
+    caches.match(request).then((cached) => {
       if (cached) return cached;
-      return fetch(event.request);
+      return fetch(request).then((response) => {
+        if (!response || response.status !== 200 || request.method !== "GET") return response;
+        const cloned = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+        return response;
+      });
     })
   );
 });
