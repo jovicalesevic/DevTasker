@@ -103,22 +103,22 @@ const importBackupBtn = byId<HTMLButtonElement>("importBackupBtn");
 const importBackupInput = byId<HTMLInputElement>("importBackupInput");
 const importModeSelect = byId<HTMLSelectElement>("importModeSelect");
 const resetAppDataBtn = byId<HTMLButtonElement>("resetAppDataBtn");
-const resetPreferencesBtn = byId<HTMLButtonElement>("resetPreferencesBtn");
+const resetPreferencesBtn = byIdOptional<HTMLButtonElement>("resetPreferencesBtn");
 const undoLastChangeBtn = byId<HTMLButtonElement>("undoLastChangeBtn");
 const snapshotHistorySelect = byId<HTMLSelectElement>("snapshotHistorySelect");
 const deleteSelectedSnapshotBtn = byId<HTMLButtonElement>("deleteSelectedSnapshotBtn");
 const clearSnapshotHistoryBtn = byId<HTMLButtonElement>("clearSnapshotHistoryBtn");
 const snapshotMeta = byId<HTMLParagraphElement>("snapshotMeta");
-const diagSchemaVersion = byId<HTMLSpanElement>("diagSchemaVersion");
-const diagSnapshots = byId<HTMLSpanElement>("diagSnapshots");
-const diagQueue = byId<HTMLSpanElement>("diagQueue");
-const diagNetwork = byId<HTMLSpanElement>("diagNetwork");
-const diffModal = byId<HTMLDivElement>("diffModal");
-const diffModalDescription = byId<HTMLParagraphElement>("diffModalDescription");
-const diffModalBody = byId<HTMLPreElement>("diffModalBody");
-const diffModalViewToggleBtn = byId<HTMLButtonElement>("diffModalViewToggleBtn");
-const diffModalCancelBtn = byId<HTMLButtonElement>("diffModalCancelBtn");
-const diffModalApplyBtn = byId<HTMLButtonElement>("diffModalApplyBtn");
+const diagSchemaVersion = byIdOptional<HTMLSpanElement>("diagSchemaVersion");
+const diagSnapshots = byIdOptional<HTMLSpanElement>("diagSnapshots");
+const diagQueue = byIdOptional<HTMLSpanElement>("diagQueue");
+const diagNetwork = byIdOptional<HTMLSpanElement>("diagNetwork");
+const diffModal = byIdOptional<HTMLDivElement>("diffModal");
+const diffModalDescription = byIdOptional<HTMLParagraphElement>("diffModalDescription");
+const diffModalBody = byIdOptional<HTMLPreElement>("diffModalBody");
+const diffModalViewToggleBtn = byIdOptional<HTMLButtonElement>("diffModalViewToggleBtn");
+const diffModalCancelBtn = byIdOptional<HTMLButtonElement>("diffModalCancelBtn");
+const diffModalApplyBtn = byIdOptional<HTMLButtonElement>("diffModalApplyBtn");
 const progressFill = byId<HTMLDivElement>("progressFill");
 const progressText = byId<HTMLSpanElement>("progressText");
 const taskForm = byId<HTMLFormElement>("taskForm");
@@ -155,18 +155,18 @@ function bindEvents(): void {
   importBackupBtn.addEventListener("click", () => importBackupInput.click());
   importBackupInput.addEventListener("change", handleImportBackup);
   resetAppDataBtn.addEventListener("click", resetAppData);
-  resetPreferencesBtn.addEventListener("click", resetPreferences);
+  resetPreferencesBtn?.addEventListener("click", resetPreferences);
   undoLastChangeBtn.addEventListener("click", undoLastDestructiveAction);
   deleteSelectedSnapshotBtn.addEventListener("click", deleteSelectedSnapshot);
   clearSnapshotHistoryBtn.addEventListener("click", clearSnapshotHistory);
-  diffModalViewToggleBtn.addEventListener("click", toggleDiffModalView);
-  diffModalCancelBtn.addEventListener("click", () => closeDiffModal(false));
-  diffModalApplyBtn.addEventListener("click", () => closeDiffModal(true));
-  diffModal.addEventListener("click", (event) => {
+  diffModalViewToggleBtn?.addEventListener("click", toggleDiffModalView);
+  diffModalCancelBtn?.addEventListener("click", () => closeDiffModal(false));
+  diffModalApplyBtn?.addEventListener("click", () => closeDiffModal(true));
+  diffModal?.addEventListener("click", (event) => {
     if (event.target === diffModal) closeDiffModal(false);
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !diffModal.classList.contains("hidden")) {
+    if (event.key === "Escape" && diffModal && !diffModal.classList.contains("hidden")) {
       closeDiffModal(false);
     }
   });
@@ -1163,7 +1163,11 @@ function showToast(message: string): void {
 }
 
 function showDiffModal(title: string, description: string, preview: { compact: string; detailed: string }): Promise<boolean> {
-  byId<HTMLHeadingElement>("diffModalTitle").textContent = title;
+  if (!diffModal || !diffModalDescription || !diffModalBody || !diffModalCancelBtn) {
+    return Promise.resolve(window.confirm(`${title}\n\n${description}\n\n${preview.detailed}`));
+  }
+  const titleEl = byIdOptional<HTMLHeadingElement>("diffModalTitle");
+  if (titleEl) titleEl.textContent = title;
   diffModalDescription.textContent = description;
   activeDiffModalPreview = { ...preview, mode: lastDiffModalViewMode };
   updateDiffModalView();
@@ -1180,9 +1184,9 @@ function showDiffModal(title: string, description: string, preview: { compact: s
 }
 
 function closeDiffModal(approved: boolean): void {
-  if (diffModal.classList.contains("hidden")) return;
+  if (!diffModal || diffModal.classList.contains("hidden")) return;
   diffModal.classList.add("hidden");
-  diffModalBody.textContent = "";
+  if (diffModalBody) diffModalBody.textContent = "";
   activeDiffModalPreview = null;
   const resolver = activeDiffModalResolver;
   activeDiffModalResolver = null;
@@ -1198,11 +1202,13 @@ function toggleDiffModalView(): void {
 }
 
 function updateDiffModalView(): void {
-  if (!activeDiffModalPreview) return;
+  if (!activeDiffModalPreview || !diffModalBody) return;
   const preview = activeDiffModalPreview.mode === "detailed" ? activeDiffModalPreview.detailed : activeDiffModalPreview.compact;
   diffModalBody.innerHTML = renderDiffPreviewHtml(preview);
-  diffModalViewToggleBtn.textContent = activeDiffModalPreview.mode === "detailed" ? "View: Detailed" : "View: Compact";
-  diffModalViewToggleBtn.classList.toggle("is-active", activeDiffModalPreview.mode === "detailed");
+  if (diffModalViewToggleBtn) {
+    diffModalViewToggleBtn.textContent = activeDiffModalPreview.mode === "detailed" ? "View: Detailed" : "View: Compact";
+    diffModalViewToggleBtn.classList.toggle("is-active", activeDiffModalPreview.mode === "detailed");
+  }
 }
 
 function loadDiffViewMode(): "compact" | "detailed" {
@@ -1664,8 +1670,14 @@ function clearSnapshotHistory(): void {
 }
 
 function renderDiagnostics(): void {
+  if (!diagSchemaVersion || !diagSnapshots || !diagQueue || !diagNetwork) return;
   diagSchemaVersion.textContent = `Schema: v${CURRENT_SCHEMA_VERSION}`;
   diagSnapshots.textContent = `Snapshots: ${getSnapshots().length}/3`;
   diagQueue.textContent = `Queue: ${state.pendingSessions.length}`;
   diagNetwork.textContent = `Network: ${navigator.onLine ? "online" : "offline"}`;
+}
+
+function byIdOptional<T>(id: string): T | null {
+  const el = document.getElementById(id);
+  return el ? (el as T) : null;
 }

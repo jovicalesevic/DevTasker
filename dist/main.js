@@ -29,22 +29,22 @@ const importBackupBtn = byId("importBackupBtn");
 const importBackupInput = byId("importBackupInput");
 const importModeSelect = byId("importModeSelect");
 const resetAppDataBtn = byId("resetAppDataBtn");
-const resetPreferencesBtn = byId("resetPreferencesBtn");
+const resetPreferencesBtn = byIdOptional("resetPreferencesBtn");
 const undoLastChangeBtn = byId("undoLastChangeBtn");
 const snapshotHistorySelect = byId("snapshotHistorySelect");
 const deleteSelectedSnapshotBtn = byId("deleteSelectedSnapshotBtn");
 const clearSnapshotHistoryBtn = byId("clearSnapshotHistoryBtn");
 const snapshotMeta = byId("snapshotMeta");
-const diagSchemaVersion = byId("diagSchemaVersion");
-const diagSnapshots = byId("diagSnapshots");
-const diagQueue = byId("diagQueue");
-const diagNetwork = byId("diagNetwork");
-const diffModal = byId("diffModal");
-const diffModalDescription = byId("diffModalDescription");
-const diffModalBody = byId("diffModalBody");
-const diffModalViewToggleBtn = byId("diffModalViewToggleBtn");
-const diffModalCancelBtn = byId("diffModalCancelBtn");
-const diffModalApplyBtn = byId("diffModalApplyBtn");
+const diagSchemaVersion = byIdOptional("diagSchemaVersion");
+const diagSnapshots = byIdOptional("diagSnapshots");
+const diagQueue = byIdOptional("diagQueue");
+const diagNetwork = byIdOptional("diagNetwork");
+const diffModal = byIdOptional("diffModal");
+const diffModalDescription = byIdOptional("diffModalDescription");
+const diffModalBody = byIdOptional("diffModalBody");
+const diffModalViewToggleBtn = byIdOptional("diffModalViewToggleBtn");
+const diffModalCancelBtn = byIdOptional("diffModalCancelBtn");
+const diffModalApplyBtn = byIdOptional("diffModalApplyBtn");
 const progressFill = byId("progressFill");
 const progressText = byId("progressText");
 const taskForm = byId("taskForm");
@@ -79,19 +79,19 @@ function bindEvents() {
     importBackupBtn.addEventListener("click", () => importBackupInput.click());
     importBackupInput.addEventListener("change", handleImportBackup);
     resetAppDataBtn.addEventListener("click", resetAppData);
-    resetPreferencesBtn.addEventListener("click", resetPreferences);
+    resetPreferencesBtn?.addEventListener("click", resetPreferences);
     undoLastChangeBtn.addEventListener("click", undoLastDestructiveAction);
     deleteSelectedSnapshotBtn.addEventListener("click", deleteSelectedSnapshot);
     clearSnapshotHistoryBtn.addEventListener("click", clearSnapshotHistory);
-    diffModalViewToggleBtn.addEventListener("click", toggleDiffModalView);
-    diffModalCancelBtn.addEventListener("click", () => closeDiffModal(false));
-    diffModalApplyBtn.addEventListener("click", () => closeDiffModal(true));
-    diffModal.addEventListener("click", (event) => {
+    diffModalViewToggleBtn?.addEventListener("click", toggleDiffModalView);
+    diffModalCancelBtn?.addEventListener("click", () => closeDiffModal(false));
+    diffModalApplyBtn?.addEventListener("click", () => closeDiffModal(true));
+    diffModal?.addEventListener("click", (event) => {
         if (event.target === diffModal)
             closeDiffModal(false);
     });
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !diffModal.classList.contains("hidden")) {
+        if (event.key === "Escape" && diffModal && !diffModal.classList.contains("hidden")) {
             closeDiffModal(false);
         }
     });
@@ -1049,7 +1049,12 @@ function showToast(message) {
     }, 2200);
 }
 function showDiffModal(title, description, preview) {
-    byId("diffModalTitle").textContent = title;
+    if (!diffModal || !diffModalDescription || !diffModalBody || !diffModalCancelBtn) {
+        return Promise.resolve(window.confirm(`${title}\n\n${description}\n\n${preview.detailed}`));
+    }
+    const titleEl = byIdOptional("diffModalTitle");
+    if (titleEl)
+        titleEl.textContent = title;
     diffModalDescription.textContent = description;
     activeDiffModalPreview = { ...preview, mode: lastDiffModalViewMode };
     updateDiffModalView();
@@ -1064,10 +1069,11 @@ function showDiffModal(title, description, preview) {
     });
 }
 function closeDiffModal(approved) {
-    if (diffModal.classList.contains("hidden"))
+    if (!diffModal || diffModal.classList.contains("hidden"))
         return;
     diffModal.classList.add("hidden");
-    diffModalBody.textContent = "";
+    if (diffModalBody)
+        diffModalBody.textContent = "";
     activeDiffModalPreview = null;
     const resolver = activeDiffModalResolver;
     activeDiffModalResolver = null;
@@ -1083,12 +1089,14 @@ function toggleDiffModalView() {
     updateDiffModalView();
 }
 function updateDiffModalView() {
-    if (!activeDiffModalPreview)
+    if (!activeDiffModalPreview || !diffModalBody)
         return;
     const preview = activeDiffModalPreview.mode === "detailed" ? activeDiffModalPreview.detailed : activeDiffModalPreview.compact;
     diffModalBody.innerHTML = renderDiffPreviewHtml(preview);
-    diffModalViewToggleBtn.textContent = activeDiffModalPreview.mode === "detailed" ? "View: Detailed" : "View: Compact";
-    diffModalViewToggleBtn.classList.toggle("is-active", activeDiffModalPreview.mode === "detailed");
+    if (diffModalViewToggleBtn) {
+        diffModalViewToggleBtn.textContent = activeDiffModalPreview.mode === "detailed" ? "View: Detailed" : "View: Compact";
+        diffModalViewToggleBtn.classList.toggle("is-active", activeDiffModalPreview.mode === "detailed");
+    }
 }
 function loadDiffViewMode() {
     const saved = localStorage.getItem(DIFF_VIEW_MODE_KEY);
@@ -1505,8 +1513,14 @@ function clearSnapshotHistory() {
     showToast("Snapshot history cleared.");
 }
 function renderDiagnostics() {
+    if (!diagSchemaVersion || !diagSnapshots || !diagQueue || !diagNetwork)
+        return;
     diagSchemaVersion.textContent = `Schema: v${CURRENT_SCHEMA_VERSION}`;
     diagSnapshots.textContent = `Snapshots: ${getSnapshots().length}/3`;
     diagQueue.textContent = `Queue: ${state.pendingSessions.length}`;
     diagNetwork.textContent = `Network: ${navigator.onLine ? "online" : "offline"}`;
+}
+function byIdOptional(id) {
+    const el = document.getElementById(id);
+    return el ? el : null;
 }
