@@ -748,8 +748,8 @@ function validateTaskDraft(input) {
     }
     let dueAt = null;
     if (input.dueAt) {
-        const iso = new Date(input.dueAt).toISOString();
-        if (!isValidIsoDate(iso))
+        const iso = normalizeDueInput(input.dueAt);
+        if (!iso)
             return null;
         dueAt = iso;
     }
@@ -901,6 +901,37 @@ function normalizeIsoDate(value) {
     catch {
         return null;
     }
+}
+function normalizeDueInput(value) {
+    const raw = value.trim();
+    if (!raw)
+        return null;
+    const direct = normalizeIsoDate(raw);
+    if (direct)
+        return direct;
+    const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) {
+        const month = Number(slash[1]);
+        const day = Number(slash[2]);
+        const year = Number(slash[3]);
+        const parsed = new Date(year, month - 1, day, 23, 59, 0, 0);
+        if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day)
+            return null;
+        const iso = normalizeIsoDate(parsed.toISOString());
+        return iso;
+    }
+    const dotted = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if (dotted) {
+        const day = Number(dotted[1]);
+        const month = Number(dotted[2]);
+        const year = Number(dotted[3]);
+        const parsed = new Date(year, month - 1, day, 23, 59, 0, 0);
+        if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day)
+            return null;
+        const iso = normalizeIsoDate(parsed.toISOString());
+        return iso;
+    }
+    return null;
 }
 function isValidIsoDate(value) {
     return !Number.isNaN(new Date(value).getTime());
