@@ -119,6 +119,9 @@ const diffModalBody = byIdOptional<HTMLPreElement>("diffModalBody");
 const diffModalViewToggleBtn = byIdOptional<HTMLButtonElement>("diffModalViewToggleBtn");
 const diffModalCancelBtn = byIdOptional<HTMLButtonElement>("diffModalCancelBtn");
 const diffModalApplyBtn = byIdOptional<HTMLButtonElement>("diffModalApplyBtn");
+const helpBtn = byIdOptional<HTMLButtonElement>("helpBtn");
+const helpModal = byIdOptional<HTMLDivElement>("helpModal");
+const helpModalCloseBtn = byIdOptional<HTMLButtonElement>("helpModalCloseBtn");
 const progressFill = byId<HTMLDivElement>("progressFill");
 const progressText = byId<HTMLSpanElement>("progressText");
 const taskForm = byId<HTMLFormElement>("taskForm");
@@ -162,12 +165,21 @@ function bindEvents(): void {
   diffModalViewToggleBtn?.addEventListener("click", toggleDiffModalView);
   diffModalCancelBtn?.addEventListener("click", () => closeDiffModal(false));
   diffModalApplyBtn?.addEventListener("click", () => closeDiffModal(true));
+  helpBtn?.addEventListener("click", openHelpModal);
+  helpModalCloseBtn?.addEventListener("click", closeHelpModal);
   diffModal?.addEventListener("click", (event) => {
     if (event.target === diffModal) closeDiffModal(false);
+  });
+  helpModal?.addEventListener("click", (event) => {
+    if (event.target === helpModal) closeHelpModal();
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && diffModal && !diffModal.classList.contains("hidden")) {
       closeDiffModal(false);
+      return;
+    }
+    if (event.key === "Escape" && helpModal && !helpModal.classList.contains("hidden")) {
+      closeHelpModal();
     }
   });
   window.addEventListener("online", () => {
@@ -238,15 +250,15 @@ function applyTaskTemplate(): void {
 
   if (template === "bugfix") {
     titleInput.value = "Bugfix: ";
-    descriptionInput.value = "Koraci reprodukcije:\n- \n\nExpected:\nActual:\nFix plan:";
+    descriptionInput.value = "Reproduction steps:\n- \n\nExpected:\nActual:\nFix plan:";
     priorityInput.value = "hitno";
   } else if (template === "feature") {
     titleInput.value = "Feature: ";
-    descriptionInput.value = "User story:\nAcceptance kriterijumi:\n- [ ] \n- [ ]";
+    descriptionInput.value = "User story:\nAcceptance criteria:\n- [ ] \n- [ ]";
     priorityInput.value = "bitno";
   } else {
     titleInput.value = "Refactor: ";
-    descriptionInput.value = "Scope:\nRizik:\nPlan testiranja:";
+    descriptionInput.value = "Scope:\nRisk:\nTest plan:";
     priorityInput.value = "moze";
   }
   titleInput.focus();
@@ -327,7 +339,7 @@ function renderProjectFilters(): void {
   const options = state.projects
     .map((project) => `<option value="${project.id}">${escapeHtml(project.name)}</option>`)
     .join("");
-  const allOption = `<option value="">Svi projekti</option>`;
+  const allOption = `<option value="">All projects</option>`;
   activeProjectFilter.innerHTML = allOption + options;
   archiveProjectFilter.innerHTML = allOption + options;
 }
@@ -352,15 +364,15 @@ function renderActiveTasks(): void {
         <h4>${escapeHtml(task.title)}</h4>
         <span class="priority ${task.priority}">${priorityLabel(task.priority)}</span>
       </div>
-      <p>${escapeHtml(task.description || "Bez opisa.")}</p>
+      <p>${escapeHtml(task.description || "No description.")}</p>
       <div class="meta-row">
         <span>${escapeHtml(project?.name || DEFAULT_PROJECT_NAME)}</span>
-        <span>${task.dueAt ? `Rok: ${formatDate(task.dueAt)}` : "Bez roka"}</span>
+        <span>${task.dueAt ? `Due: ${formatDate(task.dueAt)}` : "No due date"}</span>
         <span>${statusLabel(task.status)}</span>
       </div>
       <div class="action-row">
-        <button data-action="markDone" data-id="${task.id}">Zavrsi</button>
-        <button data-action="archive" data-id="${task.id}">Arhiviraj</button>
+        <button data-action="markDone" data-id="${task.id}">Mark done</button>
+        <button data-action="archive" data-id="${task.id}">Archive</button>
       </div>
     `;
     activeTaskList.appendChild(li);
@@ -383,7 +395,7 @@ function renderSessionTaskSelect(): void {
     .filter((task) => task.status !== "done")
     .map((task) => `<option value="${task.id}">${escapeHtml(task.title)}</option>`)
     .join("");
-  sessionTaskSelect.innerHTML = `<option value="">Izaberi task</option>${options}`;
+  sessionTaskSelect.innerHTML = `<option value="">Select task</option>${options}`;
 }
 
 function renderWorklog(): void {
@@ -402,13 +414,13 @@ function renderWorklog(): void {
         return `
           <article class="card compact">
             <div class="card-head">
-              <h4>${escapeHtml(task?.title || "Nepoznat task")}</h4>
+              <h4>${escapeHtml(task?.title || "Unknown task")}</h4>
               <span>${durationMin}m</span>
             </div>
-            <p>${escapeHtml(session.notes || "Nema belezaka.")}</p>
+            <p>${escapeHtml(session.notes || "No notes.")}</p>
             <div class="meta-row">
               <span>Blocker: ${escapeHtml(session.blocker || "-")}</span>
-              <span>Sledece: ${escapeHtml(session.nextStep || "-")}</span>
+              <span>Next: ${escapeHtml(session.nextStep || "-")}</span>
             </div>
           </article>
         `;
@@ -444,10 +456,10 @@ function renderArchive(): void {
         <h4>${escapeHtml(task.title)}</h4>
         <span>${escapeHtml(project?.name || DEFAULT_PROJECT_NAME)}</span>
       </div>
-      <p>${escapeHtml(task.description || "Bez opisa.")}</p>
+      <p>${escapeHtml(task.description || "No description.")}</p>
       <div class="meta-row">
-        <span>Kreirano: ${formatDate(task.createdAt)}</span>
-        <span>Zavrseno: ${task.archivedAt ? formatDate(task.archivedAt) : "-"}</span>
+        <span>Created: ${formatDate(task.createdAt)}</span>
+        <span>Done: ${task.archivedAt ? formatDate(task.archivedAt) : "-"}</span>
       </div>
     `;
     archiveTaskList.appendChild(li);
@@ -467,7 +479,7 @@ function renderNextUp(): void {
 
   const projectIds = [...grouped.keys()];
   if (!projectIds.length) {
-    nextUpBoard.innerHTML = `<div class="empty-state">Nema kandidata za next up.</div>`;
+    nextUpBoard.innerHTML = `<div class="empty-state">No next-up candidates.</div>`;
     return;
   }
 
@@ -511,9 +523,9 @@ function renderStandupMode(): void {
   const todayItems = predictTodayItems();
   const blockerItems = topBlockers(todaySessions.length ? todaySessions : state.sessions);
 
-  renderSimpleList(standupYesterday, yesterdayItems, "Bez zavrsenih session-a juce.");
-  renderSimpleList(standupToday, todayItems, "Nema predloga za danas.");
-  renderSimpleList(standupBlockers, blockerItems, "Nema blocker-a.");
+  renderSimpleList(standupYesterday, yesterdayItems, "No completed sessions yesterday.");
+  renderSimpleList(standupToday, todayItems, "No suggestions for today.");
+  renderSimpleList(standupBlockers, blockerItems, "No blockers.");
 }
 
 function renderAnalytics(): void {
@@ -528,7 +540,7 @@ function renderAnalytics(): void {
     </article>
     <article class="metric-card">
       <div class="metric-label">Worklog streak</div>
-      <div class="metric-value">${streak} dana</div>
+      <div class="metric-value">${streak} days</div>
     </article>
     <article class="metric-card">
       <div class="metric-label">Weekly trend</div>
@@ -600,7 +612,7 @@ function updateProgress(): void {
   const done = state.tasks.filter((task) => task.status === "done").length;
   const percent = total ? Math.round((done / total) * 100) : 0;
   progressFill.style.width = `${percent}%`;
-  progressText.textContent = `${done}/${total} zavrseno`;
+  progressText.textContent = `${done}/${total} done`;
 }
 
 function buildWeeklySummary(): WeeklySummary {
@@ -614,8 +626,8 @@ function buildWeeklySummary(): WeeklySummary {
     return sum + Math.max(1, Math.round(ms / 60_000));
   }, 0);
   const blockers = topBlockers(weekSessions);
-  const blockerText = blockers.length ? blockers.join(", ") : "nema";
-  const content = `Ove nedelje: zavrseno ${weekTasks.length} taskova, ukupno ${totalMinutes} min rada, top blokatori: ${blockerText}.`;
+  const blockerText = blockers.length ? blockers.join(", ") : "none";
+  const content = `This week: ${weekTasks.length} tasks done, ${totalMinutes} total work minutes, top blockers: ${blockerText}.`;
 
   return {
     id: uid(),
@@ -690,9 +702,9 @@ function weeklyTrendText(): string {
     return doneAt >= prevStart && doneAt < start;
   }).length;
 
-  if (currentWeekDone > prevWeekDone) return `+${currentWeekDone - prevWeekDone} vs prosle`;
-  if (currentWeekDone < prevWeekDone) return `-${prevWeekDone - currentWeekDone} vs prosle`;
-  return "isto kao prosle";
+  if (currentWeekDone > prevWeekDone) return `+${currentWeekDone - prevWeekDone} vs previous week`;
+  if (currentWeekDone < prevWeekDone) return `-${prevWeekDone - currentWeekDone} vs previous week`;
+  return "same as previous week";
 }
 
 function generateReminders(): void {
@@ -984,7 +996,7 @@ function normalizeWeeklySummary(value: unknown): WeeklySummary | null {
 }
 
 function sortState(input: AppState): AppState {
-  input.projects.sort((a, b) => a.name.localeCompare(b.name, "sr-RS") || a.id.localeCompare(b.id));
+  input.projects.sort((a, b) => a.name.localeCompare(b.name, "en-US") || a.id.localeCompare(b.id));
   input.tasks.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
   input.sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt) || b.id.localeCompare(a.id));
   input.pendingSessions.sort((a, b) => b.queuedAt.localeCompare(a.queuedAt) || b.id.localeCompare(a.id));
@@ -1100,14 +1112,14 @@ function nowIso(): string {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString("sr-RS", {
+  return new Date(value).toLocaleString("en-US", {
     dateStyle: "short",
     timeStyle: "short"
   });
 }
 
 function formatDay(value: string): string {
-  return new Date(value).toLocaleDateString("sr-RS", {
+  return new Date(value).toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
     day: "numeric"
@@ -1121,9 +1133,9 @@ function statusLabel(status: TaskStatus): string {
 }
 
 function priorityLabel(priority: Priority): string {
-  if (priority === "hitno") return "Hitno";
-  if (priority === "bitno") return "Bitno";
-  return "Moze";
+  if (priority === "hitno") return "Urgent";
+  if (priority === "bitno") return "Important";
+  return "Can wait";
 }
 
 function escapeHtml(value: string): string {
@@ -1310,22 +1322,22 @@ function exportWeeklyReport(): void {
   const lines = [
     "# DevTasker Weekly Report",
     "",
-    `Generated: ${now.toLocaleString("sr-RS")}`,
-    `Week start: ${new Date(summary.weekStart).toLocaleDateString("sr-RS")}`,
+    `Generated: ${now.toLocaleString("en-US")}`,
+    `Week start: ${new Date(summary.weekStart).toLocaleDateString("en-US")}`,
     "",
     "## Summary",
     summary.content,
     "",
     "## Analytics",
     `- Avg lead time: ${averageLeadTimeHours()}h`,
-    `- Worklog streak: ${calculateWorklogStreak()} dana`,
+    `- Worklog streak: ${calculateWorklogStreak()} days`,
     `- Weekly trend: ${weeklyTrendText()}`,
     "",
     "## Top blockers",
-    ...formatAsList(topBlockers(state.sessions), "Nema blocker-a"),
+    ...formatAsList(topBlockers(state.sessions), "No blockers"),
     "",
     "## Next up",
-    ...formatAsList(predictTodayItems(), "Nema predloga za danas.")
+    ...formatAsList(predictTodayItems(), "No suggestions for today.")
   ];
 
   const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
@@ -1370,7 +1382,7 @@ function buildDiffPreview(current: AppState, incoming: AppState, mode: DiffMode,
   const sessions = countDiffDetailed(current.sessions, incoming.sessions, mode, (item) => `${taskTitle(item.taskId)} (${formatDay(item.startedAt.slice(0, 10))})`);
   const pending = countDiffDetailed(current.pendingSessions, incoming.pendingSessions, mode, (item) => `${taskTitle(item.taskId)} (${item.minutes}m)`);
   const reminders = countDiffDetailed(current.reminders, incoming.reminders, mode, (item) => `${item.type.toUpperCase()} - ${taskTitle(item.taskId)}`);
-  const weekly = countDiffDetailed(current.weeklySummaries, incoming.weeklySummaries, mode, (item) => new Date(item.weekStart).toLocaleDateString("sr-RS"));
+  const weekly = countDiffDetailed(current.weeklySummaries, incoming.weeklySummaries, mode, (item) => new Date(item.weekStart).toLocaleDateString("en-US"));
   return [
     ...formatDiffSection("Projects", proj, detailLevel),
     ...formatDiffSection("Tasks", tasks, detailLevel),
@@ -1611,7 +1623,7 @@ function updateUndoAvailability(): void {
   clearSnapshotHistoryBtn.disabled = snapshots.length === 0;
   snapshotHistorySelect.innerHTML = snapshots
     .map((snapshot) => {
-      const when = new Date(snapshot.savedAt).toLocaleString("sr-RS", {
+      const when = new Date(snapshot.savedAt).toLocaleString("en-US", {
         dateStyle: "short",
         timeStyle: "short"
       });
@@ -1628,7 +1640,7 @@ function updateUndoAvailability(): void {
   }
   snapshotHistorySelect.disabled = false;
   const latest = snapshots[0];
-  const when = new Date(latest.savedAt).toLocaleString("sr-RS", {
+  const when = new Date(latest.savedAt).toLocaleString("en-US", {
     dateStyle: "short",
     timeStyle: "short"
   });
@@ -1680,4 +1692,15 @@ function renderDiagnostics(): void {
 function byIdOptional<T>(id: string): T | null {
   const el = document.getElementById(id);
   return el ? (el as T) : null;
+}
+
+function openHelpModal(): void {
+  if (!helpModal) return;
+  helpModal.classList.remove("hidden");
+  helpModalCloseBtn?.focus();
+}
+
+function closeHelpModal(): void {
+  if (!helpModal) return;
+  helpModal.classList.add("hidden");
 }

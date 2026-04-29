@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,13 +17,16 @@
 <body>
   <div class="app-container">
     <header class="header">
-      <h1 class="logo">DevTasker</h1>
+      <div class="header-row">
+        <h1 class="logo">DevTasker</h1>
+        <button type="button" id="helpBtn" class="ghost-btn">Help</button>
+      </div>
       <p class="subtitle">Developer worklog + planning assistant</p>
       <div class="progress-wrapper">
         <div class="progress-bar">
           <div class="progress-fill" id="progressFill" style="width:0%"></div>
         </div>
-        <span class="progress-text" id="progressText">0/0 zavrseno</span>
+        <span class="progress-text" id="progressText">0/0 done</span>
       </div>
     </header>
 
@@ -39,38 +42,38 @@
         <form id="taskForm" class="form-grid">
           <div class="row">
             <select id="taskTemplate">
-              <option value="">Template (opciono)</option>
+              <option value="">Template (optional)</option>
               <option value="bugfix">Bugfix</option>
               <option value="feature">Feature</option>
               <option value="refactor">Refactor</option>
             </select>
-            <button type="button" id="applyTemplateBtn" class="ghost-btn">Primeni template</button>
+            <button type="button" id="applyTemplateBtn" class="ghost-btn">Apply template</button>
           </div>
-          <input id="taskTitle" type="text" maxlength="120" placeholder="Task naslov" required>
-          <textarea id="taskDescription" placeholder="Opis taska"></textarea>
-          <input id="taskProject" type="text" maxlength="80" placeholder="Projekat (npr. DevTasker)">
+          <input id="taskTitle" type="text" maxlength="120" placeholder="Task title" required>
+          <textarea id="taskDescription" placeholder="Task description"></textarea>
+          <input id="taskProject" type="text" maxlength="80" placeholder="Project (e.g. DevTasker)">
           <div class="row">
             <select id="taskPriority">
-              <option value="hitno">Hitno</option>
-              <option value="bitno">Bitno</option>
-              <option value="moze">Moze</option>
+              <option value="hitno">Urgent</option>
+              <option value="bitno">Important</option>
+              <option value="moze">Can wait</option>
             </select>
             <input id="taskDueDate" type="datetime-local">
           </div>
-          <button type="submit" class="add-btn">Dodaj task</button>
+          <button type="submit" class="add-btn">Add task</button>
         </form>
 
         <div class="row">
           <select id="activeProjectFilter">
-            <option value="">Svi projekti</option>
+            <option value="">All projects</option>
           </select>
         </div>
 
         <div class="empty-state hidden" id="emptyActiveState">
-          <p>Nema aktivnih taskova.</p>
+          <p>No active tasks.</p>
         </div>
         <ul id="activeTaskList" class="stack-list"></ul>
-        <h3 class="section-title">Next up po projektu</h3>
+        <h3 class="section-title">Next up by project</h3>
         <div id="nextUpBoard" class="stack-list"></div>
       </section>
 
@@ -84,31 +87,31 @@
         </div>
         <form id="sessionForm" class="form-grid">
           <select id="sessionTaskId" required>
-            <option value="">Izaberi task</option>
+            <option value="">Select task</option>
           </select>
-          <input id="sessionMinutes" type="number" min="1" value="30" placeholder="Trajanje (min)">
-          <textarea id="sessionNotes" placeholder="Sta je uradjeno?"></textarea>
-          <input id="sessionBlocker" type="text" placeholder="Blokirano zbog...">
-          <input id="sessionNextStep" type="text" placeholder="Sledeci korak">
+          <input id="sessionMinutes" type="number" min="1" value="30" placeholder="Duration (min)">
+          <textarea id="sessionNotes" placeholder="What was done?"></textarea>
+          <input id="sessionBlocker" type="text" placeholder="Blocked because...">
+          <input id="sessionNextStep" type="text" placeholder="Next step">
           <button type="submit" class="add-btn">Add session note</button>
         </form>
 
         <h3 class="section-title">Daily worklog</h3>
         <div class="empty-state hidden" id="emptyWorklogState">
-          <p>Jos uvek nema session unosa.</p>
+          <p>No sessions recorded yet.</p>
         </div>
         <div id="worklogTimeline" class="timeline"></div>
       </section>
 
       <section class="tab-panel hidden" data-panel="archive">
         <div class="row">
-          <input id="archiveSearch" type="text" placeholder="Pretraga po naslovu/opisu">
+          <input id="archiveSearch" type="text" placeholder="Search by title/description">
           <select id="archiveProjectFilter">
-            <option value="">Svi projekti</option>
+            <option value="">All projects</option>
           </select>
         </div>
         <div class="empty-state hidden" id="emptyArchiveState">
-          <p>Archive je prazan.</p>
+          <p>Archive is empty.</p>
         </div>
         <ul id="archiveTaskList" class="stack-list"></ul>
       </section>
@@ -194,6 +197,21 @@
     </div>
   </div>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <div id="helpModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div class="modal-card">
+      <h3 id="helpModalTitle">How to use DevTasker</h3>
+      <div class="help-content">
+        <p><strong>1) Active:</strong> add tasks, choose priority/project, and due date if needed.</p>
+        <p><strong>2) Worklog:</strong> add sessions for tasks (minutes, notes, blocker, next step).</p>
+        <p><strong>3) Weekly:</strong> review standup, analytics, reminders, backup/import/undo.</p>
+        <p><strong>4) Safety:</strong> import/undo always shows a diff preview (compact/detailed).</p>
+        <p><strong>5) Offline:</strong> sessions are queued and synced when network returns.</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="helpModalCloseBtn" class="add-btn">Got it</button>
+      </div>
+    </div>
+  </div>
   <script type="module" src="dist/main.js"></script>
 </body>
 </html>

@@ -36,6 +36,18 @@ body {
   margin-bottom: 1rem;
 }
 
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.header-row .ghost-btn {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.84rem;
+}
+
 .logo {
   font-size: 2rem;
   background: linear-gradient(120deg, var(--accent-cyan), var(--accent-purple));
@@ -379,6 +391,14 @@ textarea {
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
+}
+
+.help-content {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  color: var(--text-secondary);
 }
 
 .hidden {
