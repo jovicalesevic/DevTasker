@@ -1,62 +1,198 @@
 <!DOCTYPE html>
 <html lang="sr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0f0f1a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>DevTasker</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f0f1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>DevTasker</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <header class="header">
-            <h1 class="logo">DevTasker</h1>
-            <div class="progress-wrapper">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                </div>
-                <span class="progress-text" id="progressText">0/0 završeno</span>
-            </div>
-        </header>
+  <div class="app-container">
+    <header class="header">
+      <h1 class="logo">DevTasker</h1>
+      <p class="subtitle">Developer worklog + planning assistant</p>
+      <div class="progress-wrapper">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <span class="progress-text" id="progressText">0/0 zavrseno</span>
+      </div>
+    </header>
 
-        <main class="main-content">
-            <form class="add-task-form" id="addTaskForm">
-                <div class="input-group">
-                    <input 
-                        type="text" 
-                        id="taskInput" 
-                        placeholder="Unesi novi zadatak..." 
-                        autocomplete="off"
-                        maxlength="120"
-                    >
-                    <select id="prioritySelect">
-                        <option value="hitno">Hitno</option>
-                        <option value="bitno">Bitno</option>
-                        <option value="moze">Može da čeka</option>
-                    </select>
-                </div>
-                <button type="submit" class="add-btn" id="addBtn" aria-label="Dodaj zadatak">
-                    <span class="add-icon">➕</span>
-                    Dodaj
-                </button>
-            </form>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="active">Active</button>
+      <button class="tab-btn" data-tab="worklog">Worklog</button>
+      <button class="tab-btn" data-tab="archive">Archive</button>
+      <button class="tab-btn" data-tab="weekly">Weekly</button>
+    </nav>
 
-            <ul class="task-list" id="taskList">
-                <!-- Zadaci se dinamički dodaju -->
-            </ul>
+    <main class="main-content">
+      <section class="tab-panel" data-panel="active">
+        <form id="taskForm" class="form-grid">
+          <div class="row">
+            <select id="taskTemplate">
+              <option value="">Template (opciono)</option>
+              <option value="bugfix">Bugfix</option>
+              <option value="feature">Feature</option>
+              <option value="refactor">Refactor</option>
+            </select>
+            <button type="button" id="applyTemplateBtn" class="ghost-btn">Primeni template</button>
+          </div>
+          <input id="taskTitle" type="text" maxlength="120" placeholder="Task naslov" required>
+          <textarea id="taskDescription" placeholder="Opis taska"></textarea>
+          <input id="taskProject" type="text" maxlength="80" placeholder="Projekat (npr. DevTasker)">
+          <div class="row">
+            <select id="taskPriority">
+              <option value="hitno">Hitno</option>
+              <option value="bitno">Bitno</option>
+              <option value="moze">Moze</option>
+            </select>
+            <input id="taskDueDate" type="datetime-local">
+          </div>
+          <button type="submit" class="add-btn">Dodaj task</button>
+        </form>
 
-            <div class="empty-state" id="emptyState">
-                <div class="empty-icon">📋</div>
-                <p>Nema zadataka. Dodaj prvi!</p>
-            </div>
-        </main>
+        <div class="row">
+          <select id="activeProjectFilter">
+            <option value="">Svi projekti</option>
+          </select>
+        </div>
+
+        <div class="empty-state hidden" id="emptyActiveState">
+          <p>Nema aktivnih taskova.</p>
+        </div>
+        <ul id="activeTaskList" class="stack-list"></ul>
+        <h3 class="section-title">Next up po projektu</h3>
+        <div id="nextUpBoard" class="stack-list"></div>
+      </section>
+
+      <section class="tab-panel hidden" data-panel="worklog">
+        <div class="sync-status card compact">
+          <div class="sync-left">
+            <span id="syncStatusLabel">Sync: online</span>
+            <span id="syncQueueCount">Queue: 0</span>
+          </div>
+          <button type="button" id="syncNowBtn" class="ghost-btn">Sync now</button>
+        </div>
+        <form id="sessionForm" class="form-grid">
+          <select id="sessionTaskId" required>
+            <option value="">Izaberi task</option>
+          </select>
+          <input id="sessionMinutes" type="number" min="1" value="30" placeholder="Trajanje (min)">
+          <textarea id="sessionNotes" placeholder="Sta je uradjeno?"></textarea>
+          <input id="sessionBlocker" type="text" placeholder="Blokirano zbog...">
+          <input id="sessionNextStep" type="text" placeholder="Sledeci korak">
+          <button type="submit" class="add-btn">Add session note</button>
+        </form>
+
+        <h3 class="section-title">Daily worklog</h3>
+        <div class="empty-state hidden" id="emptyWorklogState">
+          <p>Jos uvek nema session unosa.</p>
+        </div>
+        <div id="worklogTimeline" class="timeline"></div>
+      </section>
+
+      <section class="tab-panel hidden" data-panel="archive">
+        <div class="row">
+          <input id="archiveSearch" type="text" placeholder="Pretraga po naslovu/opisu">
+          <select id="archiveProjectFilter">
+            <option value="">Svi projekti</option>
+          </select>
+        </div>
+        <div class="empty-state hidden" id="emptyArchiveState">
+          <p>Archive je prazan.</p>
+        </div>
+        <ul id="archiveTaskList" class="stack-list"></ul>
+      </section>
+
+      <section class="tab-panel hidden" data-panel="weekly">
+        <h3 class="section-title">Standup mode</h3>
+        <div class="standup-grid">
+          <div class="card">
+            <h4>Yesterday</h4>
+            <ul id="standupYesterday" class="standup-list"></ul>
+          </div>
+          <div class="card">
+            <h4>Today</h4>
+            <ul id="standupToday" class="standup-list"></ul>
+          </div>
+          <div class="card">
+            <h4>Blockers</h4>
+            <ul id="standupBlockers" class="standup-list"></ul>
+          </div>
+        </div>
+        <h3 class="section-title">Weekly summary</h3>
+        <div id="weeklySummaryBody" class="card"></div>
+        <h3 class="section-title">Light analytics</h3>
+        <div id="analyticsPanel" class="analytics-grid"></div>
+        <h3 class="section-title">Smart reminders</h3>
+        <div class="row">
+          <button type="button" id="clearDismissedRemindersBtn" class="ghost-btn">Clear dismissed reminders</button>
+          <button type="button" id="exportWeeklyReportBtn" class="ghost-btn">Export weekly report</button>
+        </div>
+        <div class="row">
+          <button type="button" id="exportBackupBtn" class="ghost-btn">Export JSON backup</button>
+          <button type="button" id="importBackupBtn" class="ghost-btn">Import JSON backup</button>
+        </div>
+        <div class="row">
+          <select id="importModeSelect">
+            <option value="replace">Import mode: Replace</option>
+            <option value="merge">Import mode: Merge</option>
+          </select>
+          <button type="button" id="resetAppDataBtn" class="ghost-btn">Reset app data</button>
+        </div>
+        <div class="row">
+          <button type="button" id="resetPreferencesBtn" class="ghost-btn">Reset preferences</button>
+        </div>
+        <div class="row">
+          <button type="button" id="undoLastChangeBtn" class="ghost-btn">Undo last destructive action</button>
+        </div>
+        <div class="row">
+          <select id="snapshotHistorySelect"></select>
+        </div>
+        <div class="row">
+          <button type="button" id="deleteSelectedSnapshotBtn" class="ghost-btn">Delete selected snapshot</button>
+          <button type="button" id="clearSnapshotHistoryBtn" class="ghost-btn">Clear snapshot history</button>
+        </div>
+        <p id="snapshotMeta" class="snapshot-meta"></p>
+        <div id="diagnosticsPanel" class="card compact">
+          <h4>Diagnostics</h4>
+          <div class="meta-row">
+            <span id="diagSchemaVersion">Schema: -</span>
+            <span id="diagSnapshots">Snapshots: -</span>
+          </div>
+          <div class="meta-row">
+            <span id="diagQueue">Queue: -</span>
+            <span id="diagNetwork">Network: -</span>
+          </div>
+        </div>
+        <input id="importBackupInput" type="file" accept="application/json" class="hidden">
+        <ul id="reminderList" class="stack-list"></ul>
+      </section>
+    </main>
+  </div>
+  <div id="diffModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="diffModalTitle">
+    <div class="modal-card">
+      <h3 id="diffModalTitle">Confirm changes</h3>
+      <p id="diffModalDescription" class="modal-description"></p>
+      <div class="modal-toolbar">
+        <button type="button" id="diffModalViewToggleBtn" class="ghost-btn is-active">View: Detailed</button>
+      </div>
+      <pre id="diffModalBody" class="modal-diff"></pre>
+      <div class="modal-actions">
+        <button type="button" id="diffModalCancelBtn" class="ghost-btn">Cancel</button>
+        <button type="button" id="diffModalApplyBtn" class="add-btn">Apply</button>
+      </div>
     </div>
-
-    <script src="script.js"></script>
+  </div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <script type="module" src="dist/main.js"></script>
 </body>
 </html>

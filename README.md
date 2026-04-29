@@ -1,47 +1,72 @@
 # DevTasker
 
-A lightweight, browser-based task manager with a dark-themed UI. Add tasks with priorities, track completion with a live progress bar, and keep everything on your device—no backend required.
+DevTasker is a browser-first developer task and worklog app. It combines task planning, session logging, standup summaries, reminders, backups, and safe destructive actions (snapshots + undo) in one lightweight PWA-style frontend.
 
-## Features
+## Core Features
 
-- **localStorage persistence** — Tasks are saved in the browser under the key `devtasker_tasks`, so your list survives refresh and new sessions on the same origin.
-- **Progress bar** — The header shows completion as a percentage and a `completed / total` counter, updated whenever you finish or remove tasks.
-- **Priority levels** — Each task can be marked as urgent, important, or “can wait,” with clear visual labels.
-- **Dark mode UI** — Glass-style panels, gradient accents, and a layout tuned for readability in low light.
-- **Core task flow** — Add tasks, toggle completion, and delete with a short removal animation; empty state when there are no tasks.
-- **Responsive layout** — Works on narrow viewports and respects safe areas for mobile browsers.
+- **Task + session workflow**: tasks with priority/status/project metadata and session notes with blockers/next steps.
+- **Daily worklog + archive**: timeline by day, done archive, search/filter by project/text.
+- **Standup + analytics**: yesterday/today/blockers, lead-time average, streak, weekly trend.
+- **Offline queue + sync**: session entries are queued while offline and synced when online.
+- **Backup and restore**: export/import JSON backups in `replace` or `merge` mode.
+- **Snapshot safety**: destructive actions create snapshots; undo supports snapshot selection.
+- **Diff preview modal**: import/undo shows compact or detailed change preview with colored add/remove/update counts.
+
+## Data Safety Model
+
+- **State storage**: persisted in `localStorage` under `devtasker_state_v2`.
+- **Snapshot storage**: up to 3 snapshots under `devtasker_last_snapshot_v1`.
+- **Schema-aware load/save**: persisted envelope includes `schemaVersion`.
+- **Normalization and validation**: imported/loaded data is sanitized before it reaches runtime state.
 
 ## Tech Stack
 
-| Layer   | Technology |
-|--------|------------|
-| Markup | HTML5      |
-| Styles | CSS3 (custom properties, flexbox, backdrop blur) |
-| Logic  | Vanilla JavaScript (ES6+) |
+| Layer | Technology |
+| --- | --- |
+| Markup | HTML5 |
+| Styles | CSS3 |
+| Logic | TypeScript (compiled to `dist/main.js`) |
 
 Fonts: [Outfit](https://fonts.google.com/specimen/Outfit) via Google Fonts.
 
-## Live Demo
+## Local Development
 
-**[Open DevTasker](https://jovicalesevic.github.io/DevTasker/)**
-
-## Installation
-
-No build step or package manager is required.
-
-1. Clone the repository:
+1. Install dependencies:
 
    ```bash
-   git clone https://github.com/jovicalesevic/DevTasker.git
-   cd DevTasker
+   npm install
    ```
 
-2. Open `index.html` in your browser (double-click the file, or use a local static server if you prefer).
+2. Build TypeScript:
+
+   ```bash
+   npm run build
+   ```
+
+3. Open `index.html` in a browser (or use any static server).
+
+## Manual QA Checklist
+
+- **Import replace**
+  - import a backup in `replace` mode
+  - verify diff modal shows potential removals
+  - confirm state matches imported payload
+- **Import merge**
+  - import a backup in `merge` mode
+  - verify diff modal message explains `removed = 0` by design
+  - confirm existing records stay, incoming ids overwrite/extend
+- **Undo**
+  - trigger destructive action (reset/import)
+  - select different snapshot in history and undo
+  - verify expected restore and counts
+- **Offline sync**
+  - go offline, add session, confirm queue increments
+  - go online, confirm queued sessions flush
+- **Preferences**
+  - switch diff modal between compact/detailed
+  - refresh page and verify mode persists
+  - reset preferences and verify default mode is restored
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
-## Author
-
-**Jovica Lešević**
