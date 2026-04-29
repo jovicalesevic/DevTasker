@@ -67,6 +67,9 @@ Fonts: [Outfit](https://fonts.google.com/specimen/Outfit) via Google Fonts.
   - refresh page and verify mode persists
   - reset preferences and verify default mode is restored
 
+For repeatable release validation, see `RELEASE_CHECKLIST.md`.
+For consistent PR reviews, see `.github/pull_request_template.md`.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
