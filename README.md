@@ -11,6 +11,7 @@ DevTasker is a browser-first developer task and worklog app. It combines task pl
 - **Backup and restore**: export/import JSON backups in `replace` or `merge` mode.
 - **Snapshot safety**: destructive actions create snapshots; undo supports snapshot selection.
 - **Diff preview modal**: import/undo shows compact or detailed change preview with colored add/remove/update counts.
+- **Bilingual UI (EN/SR)**: language switch with persisted preference and translated runtime messages.
 
 ## Data Safety Model
 
@@ -26,8 +27,14 @@ DevTasker is a browser-first developer task and worklog app. It combines task pl
 | Markup | HTML5 |
 | Styles | CSS3 |
 | Logic | TypeScript (compiled to `dist/main.js`) |
+| i18n | Built-in dictionary-based EN/SR localization |
 
 Fonts: [Outfit](https://fonts.google.com/specimen/Outfit) via Google Fonts.
+
+## PWA Notes
+
+- Current manifest icon is an inline SVG data URI (`192x192`).
+- A dedicated PNG icon set (`192x192`, `512x512`, optional `maskable`) is recommended for best install compatibility and store-style polish.
 
 ## Local Development
 
