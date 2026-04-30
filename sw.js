@@ -1,10 +1,13 @@
-const CACHE_NAME = "devtasker-v4";
+const CACHE_NAME = "devtasker-v5";
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./dist/main.js",
-  "./manifest.webmanifest"
+  "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-512.png"
 ];
 
 self.addEventListener("install", (event) => {
