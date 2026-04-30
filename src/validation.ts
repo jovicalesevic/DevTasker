@@ -2,7 +2,7 @@ import {
   MAX_DESCRIPTION_LENGTH,
   MAX_TEXT_FIELD_LENGTH,
   MAX_TITLE_LENGTH
-} from "./constants";
+} from "./constants.js";
 import type {
   AppState,
   PendingSession,
@@ -14,7 +14,7 @@ import type {
   Task,
   TaskStatus,
   WeeklySummary
-} from "./types";
+} from "./types.js";
 
 export function validateTaskDraft(input: {
   title: string;

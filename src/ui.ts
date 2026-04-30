@@ -1,4 +1,4 @@
-import type { AppState, Task, WeeklySummary } from "./types";
+import type { AppState, Task, WeeklySummary } from "./types.js";
 
 interface UiElements {
   activeTaskList: HTMLUListElement;

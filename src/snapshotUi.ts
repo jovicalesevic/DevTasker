@@ -1,4 +1,4 @@
-import type { SnapshotEntry } from "./types";
+import type { SnapshotEntry } from "./types.js";
 
 interface SnapshotUiDeps {
   getSnapshots: () => SnapshotEntry[];

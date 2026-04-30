@@ -1,4 +1,4 @@
-import { renderDiffPreviewHtml } from "./diffPreview";
+import { renderDiffPreviewHtml } from "./diffPreview.js";
 
 type PreviewPayload = { compact: string; detailed: string };
 type ViewMode = "compact" | "detailed";

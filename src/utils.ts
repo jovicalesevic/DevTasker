@@ -1,4 +1,4 @@
-import type { Priority, TaskStatus } from "./types";
+import type { Priority, TaskStatus } from "./types.js";
 
 export function startOfDay(date: Date): Date {
   const d = new Date(date);

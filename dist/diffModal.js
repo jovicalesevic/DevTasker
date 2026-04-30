@@ -1,4 +1,4 @@
-import { renderDiffPreviewHtml } from "./diffPreview";
+import { renderDiffPreviewHtml } from "./diffPreview.js";
 export function createDiffModalController(deps) {
     let activeResolver = null;
     let activePreview = null;

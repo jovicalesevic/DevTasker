@@ -4,13 +4,13 @@ import {
   DIFF_VIEW_MODE_KEY,
   SNAPSHOT_KEY,
   STORAGE_KEY
-} from "./constants";
+} from "./constants.js";
 import {
   loadState as loadStateFromStorage,
   mergeState as mergeAppState,
   replaceState as replaceAppState,
   saveState as saveStateToStorage
-} from "./state";
+} from "./state.js";
 import {
   createEmptyState,
   isPersistedEnvelope,
@@ -19,7 +19,7 @@ import {
   sortState,
   validatePendingSessionDraft,
   validateTaskDraft
-} from "./validation";
+} from "./validation.js";
 import {
   byId,
   byIdOptional,
@@ -31,21 +31,21 @@ import {
   startOfWeek,
   statusLabel,
   uid
-} from "./utils";
-import { buildDiffPreview } from "./diffPreview";
+} from "./utils.js";
+import { buildDiffPreview } from "./diffPreview.js";
 import {
   captureSnapshot,
   getSnapshots as getSnapshotsFromStorage,
   setSnapshots as setSnapshotsToStorage,
   snapshotDataCounts
-} from "./snapshots";
-import { commitSession as commitSessionToState, flushPendingSessions as flushPendingSessionsFromQueue } from "./sync";
+} from "./snapshots.js";
+import { commitSession as commitSessionToState, flushPendingSessions as flushPendingSessionsFromQueue } from "./sync.js";
 import {
   exportBackupJson as exportBackupJsonFile,
   importBackupFromFile,
   resetAppData as resetAllAppData,
   undoLastDestructiveAction as undoFromSnapshots
-} from "./backup";
+} from "./backup.js";
 import {
   averageLeadTimeHours as averageLeadTimeHoursFromState,
   calculateWorklogStreak as calculateWorklogStreakFromSessions,
@@ -54,17 +54,17 @@ import {
   predictTodayItems as predictTodayItemsFromState,
   topBlockers as topBlockersFromSessions,
   weeklyTrendText as weeklyTrendTextFromState
-} from "./analytics";
-import { exportWeeklyReport as exportWeeklyReportFile } from "./report";
-import { applyStaticTranslations, getLanguage, setLanguage, t, tf } from "./i18n";
-import { createSnapshotUiController } from "./snapshotUi";
-import { createUiRenderer } from "./ui";
+} from "./analytics.js";
+import { exportWeeklyReport as exportWeeklyReportFile } from "./report.js";
+import { applyStaticTranslations, getLanguage, setLanguage, t, tf } from "./i18n.js";
+import { createSnapshotUiController } from "./snapshotUi.js";
+import { createUiRenderer } from "./ui.js";
 import {
   closeHelpModal as hideHelpModal,
   isHelpModalOpen,
   openHelpModal as showHelpModal
-} from "./helpModal";
-import { createDiffModalController } from "./diffModal";
+} from "./helpModal.js";
+import { createDiffModalController } from "./diffModal.js";
 import type {
   AppState,
   DiffMode,
@@ -79,7 +79,7 @@ import type {
   Task,
   TaskStatus,
   WeeklySummary
-} from "./types";
+} from "./types.js";
 
 const state: AppState = loadState();
 

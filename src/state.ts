@@ -1,4 +1,4 @@
-import type { AppState, PersistedStateEnvelope } from "./types";
+import type { AppState, PersistedStateEnvelope } from "./types.js";
 
 export function loadState(
   storageKey: string,

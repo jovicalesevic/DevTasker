@@ -1,4 +1,4 @@
-import type { AppState, PendingSession } from "./types";
+import type { AppState, PendingSession } from "./types.js";
 
 export function commitSession(
   state: AppState,

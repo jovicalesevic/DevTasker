@@ -1,4 +1,4 @@
-import type { AppState, SnapshotEntry } from "./types";
+import type { AppState, SnapshotEntry } from "./types.js";
 
 export function getSnapshots(storageKey: string): SnapshotEntry[] {
   const raw = localStorage.getItem(storageKey);

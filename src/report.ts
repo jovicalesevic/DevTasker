@@ -1,4 +1,4 @@
-import type { WeeklySummary } from "./types";
+import type { WeeklySummary } from "./types.js";
 
 function formatAsList(items: string[], fallback: string): string[] {
   if (!items.length) return [`- ${fallback}`];

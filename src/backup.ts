@@ -1,4 +1,4 @@
-import type { AppState, DiffMode, SnapshotEntry } from "./types";
+import type { AppState, DiffMode, SnapshotEntry } from "./types.js";
 
 export function exportBackupJson(
   state: AppState,

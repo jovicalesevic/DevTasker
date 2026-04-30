@@ -1,4 +1,4 @@
-import type { AppState, DiffMode } from "./types";
+import type { AppState, DiffMode } from "./types.js";
 
 export function renderDiffPreviewHtml(preview: string, escapeHtml: (value: string) => string): string {
   return preview

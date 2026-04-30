@@ -1,4 +1,4 @@
-import type { AppState, Session, Task } from "./types";
+import type { AppState, Session, Task } from "./types.js";
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());

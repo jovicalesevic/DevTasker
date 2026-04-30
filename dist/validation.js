@@ -1,4 +1,4 @@
-import { MAX_DESCRIPTION_LENGTH, MAX_TEXT_FIELD_LENGTH, MAX_TITLE_LENGTH } from "./constants";
+import { MAX_DESCRIPTION_LENGTH, MAX_TEXT_FIELD_LENGTH, MAX_TITLE_LENGTH } from "./constants.js";
 export function validateTaskDraft(input) {
     const title = input.title.trim();
     const description = input.description.trim();
