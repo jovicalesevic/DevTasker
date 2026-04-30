@@ -19,6 +19,10 @@
     <header class="header">
       <div class="header-row">
         <h1 class="logo">DevTasker</h1>
+        <select id="languageSelect" class="ghost-btn">
+          <option value="en">English</option>
+          <option value="sr">Srpski</option>
+        </select>
         <button type="button" id="helpBtn" class="ghost-btn">Help</button>
       </div>
       <p class="subtitle">Developer worklog + planning assistant</p>
@@ -201,11 +205,11 @@
     <div class="modal-card">
       <h3 id="helpModalTitle">How to use DevTasker</h3>
       <div class="help-content">
-        <p><strong>1) Active:</strong> add tasks, choose priority/project, and due date if needed.</p>
-        <p><strong>2) Worklog:</strong> add sessions for tasks (minutes, notes, blocker, next step).</p>
-        <p><strong>3) Weekly:</strong> review standup, analytics, reminders, backup/import/undo.</p>
-        <p><strong>4) Safety:</strong> import/undo always shows a diff preview (compact/detailed).</p>
-        <p><strong>5) Offline:</strong> sessions are queued and synced when network returns.</p>
+        <p id="helpStep1"><strong>1) Active:</strong> add tasks, choose priority/project, and due date if needed.</p>
+        <p id="helpStep2"><strong>2) Worklog:</strong> add sessions for tasks (minutes, notes, blocker, next step).</p>
+        <p id="helpStep3"><strong>3) Weekly:</strong> review standup, analytics, reminders, backup/import/undo.</p>
+        <p id="helpStep4"><strong>4) Safety:</strong> import/undo always shows a diff preview (compact/detailed).</p>
+        <p id="helpStep5"><strong>5) Offline:</strong> sessions are queued and synced when network returns.</p>
       </div>
       <div class="modal-actions">
         <button type="button" id="helpModalCloseBtn" class="add-btn">Got it</button>

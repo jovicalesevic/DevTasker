@@ -56,6 +56,7 @@ import {
   weeklyTrendText as weeklyTrendTextFromState
 } from "./analytics";
 import { exportWeeklyReport as exportWeeklyReportFile } from "./report";
+import { applyStaticTranslations, getLanguage, setLanguage, t, tf } from "./i18n";
 import { createSnapshotUiController } from "./snapshotUi";
 import { createUiRenderer } from "./ui";
 import {
@@ -120,6 +121,7 @@ const diffModalViewToggleBtn = byIdOptional<HTMLButtonElement>("diffModalViewTog
 const diffModalCancelBtn = byIdOptional<HTMLButtonElement>("diffModalCancelBtn");
 const diffModalApplyBtn = byIdOptional<HTMLButtonElement>("diffModalApplyBtn");
 const helpBtn = byIdOptional<HTMLButtonElement>("helpBtn");
+const languageSelect = byIdOptional<HTMLSelectElement>("languageSelect");
 const helpModal = byIdOptional<HTMLDivElement>("helpModal");
 const helpModalCloseBtn = byIdOptional<HTMLButtonElement>("helpModalCloseBtn");
 const progressFill = byId<HTMLDivElement>("progressFill");
@@ -140,7 +142,8 @@ const diffModalController = createDiffModalController({
   diffModalBody,
   diffModalViewToggleBtn,
   diffModalCancelBtn,
-  escapeHtml
+  escapeHtml,
+  t
 });
 const uiRenderer = createUiRenderer(
   () => state,
@@ -192,7 +195,8 @@ const uiRenderer = createUiRenderer(
     calculateWorklogStreak,
     weeklyTrendText,
     buildWeeklySummary,
-    getSnapshotsCount: () => getSnapshotsFromStorage(SNAPSHOT_KEY).length
+    getSnapshotsCount: () => getSnapshotsFromStorage(SNAPSHOT_KEY).length,
+    t
   },
   {
     defaultProjectName: DEFAULT_PROJECT_NAME,
@@ -211,10 +215,15 @@ const snapshotUiController = createSnapshotUiController({
   escapeHtml,
   showToast,
   renderAll,
-  snapshotStorageKey: SNAPSHOT_KEY
+  snapshotStorageKey: SNAPSHOT_KEY,
+  t,
+  tf,
+  locale: () => (getLanguage() === "sr" ? "sr-RS" : "en-US")
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  applyStaticTranslations();
+  if (languageSelect) languageSelect.value = getLanguage();
   bindEvents();
   flushPendingSessions();
   renderAll();
@@ -243,6 +252,12 @@ function bindEvents(): void {
   diffModalCancelBtn?.addEventListener("click", () => diffModalController.close(false));
   diffModalApplyBtn?.addEventListener("click", () => diffModalController.close(true));
   helpBtn?.addEventListener("click", () => showHelpModal(helpModal, helpModalCloseBtn));
+  languageSelect?.addEventListener("change", () => {
+    const next = languageSelect.value === "sr" ? "sr" : "en";
+    setLanguage(next);
+    applyStaticTranslations();
+    renderAll();
+  });
   helpModalCloseBtn?.addEventListener("click", () => hideHelpModal(helpModal));
   diffModal?.addEventListener("click", (event) => {
     if (event.target === diffModal) diffModalController.close(false);
@@ -266,7 +281,7 @@ function bindEvents(): void {
   });
   window.addEventListener("offline", () => {
     updateSyncStatus();
-    showToast("Offline mode: sessions will be queued.");
+    showToast(t("toast.offlineQueued"));
   });
 
   document.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((btn) => {
@@ -292,7 +307,7 @@ function handleTaskSubmit(event: SubmitEvent): void {
     dueAt: dueInput.value || null
   });
   if (!draft) {
-    showToast("Task form has invalid data.");
+    showToast(t("toast.taskInvalid"));
     return;
   }
 
@@ -313,7 +328,7 @@ function handleTaskSubmit(event: SubmitEvent): void {
   saveState();
   taskForm.reset();
   renderAll();
-  showToast("Task added.");
+  showToast(t("toast.taskAdded"));
 }
 
 function applyTaskTemplate(): void {
@@ -339,7 +354,7 @@ function applyTaskTemplate(): void {
     priorityInput.value = "moze";
   }
   titleInput.focus();
-  showToast("Template applied.");
+  showToast(t("toast.templateApplied"));
 }
 
 function handleSessionSubmit(event: SubmitEvent): void {
@@ -353,7 +368,7 @@ function handleSessionSubmit(event: SubmitEvent): void {
   const taskId = taskIdInput.value;
   const task = state.tasks.find((item) => item.id === taskId);
   if (!taskId || !task) {
-    showToast("Select a valid task.");
+    showToast(t("toast.selectValidTask"));
     return;
   }
   const payload = validatePendingSessionDraft({
@@ -366,16 +381,16 @@ function handleSessionSubmit(event: SubmitEvent): void {
     queuedAt: nowIso()
   });
   if (!payload) {
-    showToast("Session input has invalid data.");
+    showToast(t("toast.sessionInvalid"));
     return;
   }
 
   if (navigator.onLine) {
     commitSession(payload);
-    showToast("Session saved.");
+    showToast(t("toast.sessionSaved"));
   } else {
     state.pendingSessions.unshift(payload);
-    showToast("Offline: session queued for sync.");
+    showToast(t("toast.sessionQueued"));
   }
 
   saveState();
@@ -650,9 +665,9 @@ function handleManualSync(): void {
   if (flushed > 0) {
     showToast(`Synced ${flushed} queued session(s).`);
   } else if (!navigator.onLine) {
-    showToast("Cannot sync while offline.");
+    showToast(t("toast.cannotSyncOffline"));
   } else {
-    showToast("Queue is already empty.");
+    showToast(t("toast.queueEmpty"));
   }
 }
 
@@ -665,14 +680,14 @@ function showToast(message: string): void {
 }
 
 function resetPreferences(): void {
-  const confirmed = window.confirm("Reset UI preferences to default values?");
+  const confirmed = window.confirm(t("confirm.resetPreferences"));
   if (!confirmed) return;
   diffModalController.resetViewPreference();
-  showToast("Preferences reset.");
+  showToast(t("toast.preferencesReset"));
 }
 
 function exportBackupJson(): void {
-  exportBackupJsonFile(state, showToast);
+  exportBackupJsonFile(state, showToast, tf);
 }
 
 async function handleImportBackup(): Promise<void> {
@@ -692,7 +707,9 @@ async function handleImportBackup(): Promise<void> {
       replaceState,
       saveState,
       renderAll,
-      showToast
+      showToast,
+      t,
+      tf
     });
   } finally {
     // Clear file input so selecting the same file triggers change event again.
@@ -709,7 +726,10 @@ function exportWeeklyReport(): void {
     weeklyTrend: weeklyTrendText(),
     topBlockers: topBlockers(state.sessions),
     nextUpItems: predictTodayItems(),
-    showToast
+    showToast,
+    t,
+    tf,
+    locale: getLanguage() === "sr" ? "sr-RS" : "en-US"
   });
 }
 
@@ -731,7 +751,8 @@ function resetAppData(): void {
     replaceState,
     saveState,
     renderAll,
-    showToast
+    showToast,
+    t
   });
 }
 
@@ -746,7 +767,9 @@ async function undoLastDestructiveAction(): Promise<void> {
     replaceState,
     saveState,
     renderAll,
-    showToast
+    showToast,
+    t,
+    tf
   });
 }
 

@@ -8,8 +8,8 @@ export function exportWeeklyReport(deps) {
     const lines = [
         "# DevTasker Weekly Report",
         "",
-        `Generated: ${now.toLocaleString("en-US")}`,
-        `Week start: ${new Date(deps.summary.weekStart).toLocaleDateString("en-US")}`,
+        deps.tf("report.generated", { value: now.toLocaleString(deps.locale) }),
+        deps.tf("report.weekStart", { value: new Date(deps.summary.weekStart).toLocaleDateString(deps.locale) }),
         "",
         "## Summary",
         deps.summary.content,
@@ -20,10 +20,10 @@ export function exportWeeklyReport(deps) {
         `- Weekly trend: ${deps.weeklyTrend}`,
         "",
         "## Top blockers",
-        ...formatAsList(deps.topBlockers, "No blockers"),
+        ...formatAsList(deps.topBlockers, deps.t("report.noBlockers")),
         "",
         "## Next up",
-        ...formatAsList(deps.nextUpItems, "No suggestions for today.")
+        ...formatAsList(deps.nextUpItems, deps.t("report.noSuggestions"))
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
     const filename = `devtasker-weekly-${now.toISOString().slice(0, 10)}.md`;
@@ -33,5 +33,5 @@ export function exportWeeklyReport(deps) {
     anchor.download = filename;
     anchor.click();
     URL.revokeObjectURL(url);
-    deps.showToast(`Report exported: ${filename}`);
+    deps.showToast(deps.tf("report.exported", { filename }));
 }

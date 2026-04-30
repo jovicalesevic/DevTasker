@@ -1,6 +1,10 @@
 import type { AppState, DiffMode, SnapshotEntry } from "./types";
 
-export function exportBackupJson(state: AppState, showToast: (message: string) => void): void {
+export function exportBackupJson(
+  state: AppState,
+  showToast: (message: string) => void,
+  tf: (key: string, vars: Record<string, string | number>) => string
+): void {
   const now = new Date();
   const filename = `devtasker-backup-${now.toISOString().slice(0, 10)}.json`;
   const payload = {
@@ -17,7 +21,7 @@ export function exportBackupJson(state: AppState, showToast: (message: string) =
   anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
-  showToast(`Backup exported: ${filename}`);
+  showToast(tf("backup.exported", { filename }));
 }
 
 interface ImportBackupDeps {
@@ -33,6 +37,8 @@ interface ImportBackupDeps {
   saveState: () => void;
   renderAll: () => void;
   showToast: (message: string) => void;
+  t: (key: string) => string;
+  tf: (key: string, vars: Record<string, string | number>) => string;
 }
 
 export async function importBackupFromFile(deps: ImportBackupDeps): Promise<void> {
@@ -46,13 +52,14 @@ export async function importBackupFromFile(deps: ImportBackupDeps): Promise<void
       compact: deps.buildDiffPreview(deps.state, next, deps.importMode, "compact"),
       detailed: deps.buildDiffPreview(deps.state, next, deps.importMode, "detailed")
     };
-    const modeNote =
-      deps.importMode === "merge"
-        ? "Merge mode keeps existing items by id (removed count stays 0 by design)."
-        : "Replace mode can remove items missing from imported backup.";
-    const confirmed = await deps.showDiffModal("Confirm import", `Mode: ${deps.importMode}. ${modeNote}`, preview);
+    const modeNote = deps.importMode === "merge" ? deps.t("backup.modeMergeNote") : deps.t("backup.modeReplaceNote");
+    const confirmed = await deps.showDiffModal(
+      deps.t("backup.confirmImportTitle"),
+      deps.tf("backup.confirmImportDesc", { mode: deps.importMode, note: modeNote }),
+      preview
+    );
     if (!confirmed) {
-      deps.showToast("Import cancelled.");
+      deps.showToast(deps.t("backup.importCancelled"));
       return;
     }
 
@@ -61,9 +68,9 @@ export async function importBackupFromFile(deps: ImportBackupDeps): Promise<void
     else deps.replaceState(next);
     deps.saveState();
     deps.renderAll();
-    deps.showToast(`Backup imported (${deps.importMode}).`);
+    deps.showToast(deps.tf("backup.imported", { mode: deps.importMode }));
   } catch {
-    deps.showToast("Invalid backup file.");
+    deps.showToast(deps.t("backup.invalidFile"));
   }
 }
 
@@ -73,10 +80,11 @@ interface ResetAppDataDeps {
   saveState: () => void;
   renderAll: () => void;
   showToast: (message: string) => void;
+  t: (key: string) => string;
 }
 
 export function resetAppData(deps: ResetAppDataDeps): void {
-  const confirmed = window.confirm("This will remove all local DevTasker data. Continue?");
+  const confirmed = window.confirm(deps.t("backup.confirmResetAppData"));
   if (!confirmed) return;
   deps.snapshotCurrentState("reset");
   deps.replaceState({
@@ -89,7 +97,7 @@ export function resetAppData(deps: ResetAppDataDeps): void {
   });
   deps.saveState();
   deps.renderAll();
-  deps.showToast("App data reset.");
+  deps.showToast(deps.t("backup.appDataReset"));
 }
 
 interface UndoDeps {
@@ -103,13 +111,15 @@ interface UndoDeps {
   saveState: () => void;
   renderAll: () => void;
   showToast: (message: string) => void;
+  t: (key: string) => string;
+  tf: (key: string, vars: Record<string, string | number>) => string;
 }
 
 export async function undoLastDestructiveAction(deps: UndoDeps): Promise<void> {
   const snapshots = deps.getSnapshots();
   const snapshot = snapshots.find((item) => item.savedAt === deps.selectedSnapshot) ?? snapshots[0];
   if (!snapshot) {
-    deps.showToast("No snapshot available.");
+    deps.showToast(deps.t("backup.noSnapshot"));
     return;
   }
 
@@ -119,16 +129,16 @@ export async function undoLastDestructiveAction(deps: UndoDeps): Promise<void> {
     detailed: deps.buildDiffPreview(deps.state, target, "replace", "detailed")
   };
   const confirmed = await deps.showDiffModal(
-    "Confirm undo",
-    `Snapshot reason: ${snapshot.reason}. This will replace current local state.`,
+    deps.t("backup.confirmUndoTitle"),
+    deps.tf("backup.confirmUndoDesc", { reason: snapshot.reason }),
     preview
   );
   if (!confirmed) {
-    deps.showToast("Undo cancelled.");
+    deps.showToast(deps.t("backup.undoCancelled"));
     return;
   }
   deps.replaceState(target);
   deps.saveState();
   deps.renderAll();
-  deps.showToast(`Undo applied (${snapshot.reason}).`);
+  deps.showToast(deps.tf("backup.undoApplied", { reason: snapshot.reason }));
 }

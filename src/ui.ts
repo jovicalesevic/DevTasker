@@ -50,6 +50,7 @@ interface UiCallbacks {
   weeklyTrendText: () => string;
   buildWeeklySummary: () => WeeklySummary;
   getSnapshotsCount: () => number;
+  t: (key: string) => string;
 }
 
 interface UiOptions {
@@ -91,7 +92,7 @@ export function createUiRenderer(
       const optionsHtml = state.projects
         .map((project) => `<option value="${project.id}">${callbacks.escapeHtml(project.name)}</option>`)
         .join("");
-      const allOption = `<option value="">All projects</option>`;
+      const allOption = `<option value="">${callbacks.t("filter.allProjects")}</option>`;
       elements.activeProjectFilter.innerHTML = allOption + optionsHtml;
       elements.archiveProjectFilter.innerHTML = allOption + optionsHtml;
     },
@@ -116,15 +117,15 @@ export function createUiRenderer(
             <h4>${callbacks.escapeHtml(task.title)}</h4>
             <span class="priority ${task.priority}">${callbacks.priorityLabel(task.priority)}</span>
           </div>
-          <p>${callbacks.escapeHtml(task.description || "No description.")}</p>
+          <p>${callbacks.escapeHtml(task.description || callbacks.t("common.noDescription"))}</p>
           <div class="meta-row">
             <span>${callbacks.escapeHtml(project?.name || options.defaultProjectName)}</span>
-            <span>${task.dueAt ? `Due: ${callbacks.formatDate(task.dueAt)}` : "No due date"}</span>
+            <span>${task.dueAt ? `${callbacks.t("common.duePrefix")} ${callbacks.formatDate(task.dueAt)}` : callbacks.t("common.noDueDate")}</span>
             <span>${callbacks.statusLabel(task.status)}</span>
           </div>
           <div class="action-row">
-            <button data-action="markDone" data-id="${task.id}">Mark done</button>
-            <button data-action="archive" data-id="${task.id}">Archive</button>
+            <button data-action="markDone" data-id="${task.id}">${callbacks.t("btn.markDone")}</button>
+            <button data-action="archive" data-id="${task.id}">${callbacks.t("btn.archive")}</button>
           </div>
         `;
         elements.activeTaskList.appendChild(li);
@@ -147,7 +148,7 @@ export function createUiRenderer(
         .filter((task) => task.status !== "done")
         .map((task) => `<option value="${task.id}">${callbacks.escapeHtml(task.title)}</option>`)
         .join("");
-      elements.sessionTaskSelect.innerHTML = `<option value="">Select task</option>${optionsHtml}`;
+      elements.sessionTaskSelect.innerHTML = `<option value="">${callbacks.t("input.selectTask")}</option>${optionsHtml}`;
     },
     renderWorklog(): void {
       const state = getState();
@@ -169,13 +170,13 @@ export function createUiRenderer(
             return `
               <article class="card compact">
                 <div class="card-head">
-                  <h4>${callbacks.escapeHtml(task?.title || "Unknown task")}</h4>
+                  <h4>${callbacks.escapeHtml(task?.title || callbacks.t("common.unknownTask"))}</h4>
                   <span>${durationMin}m</span>
                 </div>
-                <p>${callbacks.escapeHtml(session.notes || "No notes.")}</p>
+                <p>${callbacks.escapeHtml(session.notes || callbacks.t("common.noNotes"))}</p>
                 <div class="meta-row">
-                  <span>Blocker: ${callbacks.escapeHtml(session.blocker || "-")}</span>
-                  <span>Next: ${callbacks.escapeHtml(session.nextStep || "-")}</span>
+                  <span>${callbacks.t("worklog.blocker")}: ${callbacks.escapeHtml(session.blocker || "-")}</span>
+                  <span>${callbacks.t("worklog.next")}: ${callbacks.escapeHtml(session.nextStep || "-")}</span>
                 </div>
               </article>
             `;
@@ -211,10 +212,10 @@ export function createUiRenderer(
             <h4>${callbacks.escapeHtml(task.title)}</h4>
             <span>${callbacks.escapeHtml(project?.name || options.defaultProjectName)}</span>
           </div>
-          <p>${callbacks.escapeHtml(task.description || "No description.")}</p>
+          <p>${callbacks.escapeHtml(task.description || callbacks.t("common.noDescription"))}</p>
           <div class="meta-row">
-            <span>Created: ${callbacks.formatDate(task.createdAt)}</span>
-            <span>Done: ${task.archivedAt ? callbacks.formatDate(task.archivedAt) : "-"}</span>
+            <span>${callbacks.t("archive.created")}: ${callbacks.formatDate(task.createdAt)}</span>
+            <span>${callbacks.t("archive.done")}: ${task.archivedAt ? callbacks.formatDate(task.archivedAt) : "-"}</span>
           </div>
         `;
         elements.archiveTaskList.appendChild(li);
@@ -234,7 +235,7 @@ export function createUiRenderer(
 
       const projectIds = [...grouped.keys()];
       if (!projectIds.length) {
-        elements.nextUpBoard.innerHTML = `<div class="empty-state">No next-up candidates.</div>`;
+        elements.nextUpBoard.innerHTML = `<div class="empty-state">${callbacks.t("nextup.empty")}</div>`;
         return;
       }
 
@@ -249,7 +250,7 @@ export function createUiRenderer(
         card.innerHTML = `
           <div class="card-head">
             <h4>${callbacks.escapeHtml(project?.name || options.defaultProjectName)}</h4>
-            <span>Top ${topTasks.length}</span>
+            <span>${callbacks.t("nextup.top")} ${topTasks.length}</span>
           </div>
           <ul class="standup-list">
             ${topTasks.map((task) => `<li>${callbacks.escapeHtml(task.title)}</li>`).join("")}
@@ -278,9 +279,9 @@ export function createUiRenderer(
       const todayItems = callbacks.predictTodayItems();
       const blockerItems = callbacks.topBlockers(todaySessions.length ? todaySessions : state.sessions);
 
-      renderSimpleList(elements.standupYesterday, yesterdayItems, "No completed sessions yesterday.");
-      renderSimpleList(elements.standupToday, todayItems, "No suggestions for today.");
-      renderSimpleList(elements.standupBlockers, blockerItems, "No blockers.");
+      renderSimpleList(elements.standupYesterday, yesterdayItems, callbacks.t("standup.emptyYesterday"));
+      renderSimpleList(elements.standupToday, todayItems, callbacks.t("standup.emptyToday"));
+      renderSimpleList(elements.standupBlockers, blockerItems, callbacks.t("standup.emptyBlockers"));
     },
     renderAnalytics(): void {
       const leadTimeHours = callbacks.averageLeadTimeHours();
@@ -289,15 +290,15 @@ export function createUiRenderer(
 
       elements.analyticsPanel.innerHTML = `
         <article class="metric-card">
-          <div class="metric-label">Avg lead time</div>
+          <div class="metric-label">${callbacks.t("analytics.avgLeadTime")}</div>
           <div class="metric-value">${leadTimeHours}h</div>
         </article>
         <article class="metric-card">
-          <div class="metric-label">Worklog streak</div>
-          <div class="metric-value">${streak} days</div>
+          <div class="metric-label">${callbacks.t("analytics.worklogStreak")}</div>
+          <div class="metric-value">${streak} ${callbacks.t("analytics.days")}</div>
         </article>
         <article class="metric-card">
-          <div class="metric-label">Weekly trend</div>
+          <div class="metric-label">${callbacks.t("analytics.weeklyTrend")}</div>
           <div class="metric-value">${callbacks.escapeHtml(trend)}</div>
         </article>
       `;
@@ -318,11 +319,11 @@ export function createUiRenderer(
         li.innerHTML = `
           <div class="card-head">
             <h4>${callbacks.escapeHtml(task.title)}</h4>
-            <span>${reminder.type === "due" ? "Due" : "Stale"}</span>
+            <span>${reminder.type === "due" ? callbacks.t("reminder.due") : callbacks.t("reminder.stale")}</span>
           </div>
-          <p>Trigger: ${callbacks.formatDate(reminder.triggerAt)}</p>
+          <p>${callbacks.t("reminder.trigger")}: ${callbacks.formatDate(reminder.triggerAt)}</p>
           <div class="action-row">
-            <button data-action="dismissReminder" data-id="${reminder.id}">Dismiss</button>
+            <button data-action="dismissReminder" data-id="${reminder.id}">${callbacks.t("btn.dismiss")}</button>
           </div>
         `;
         elements.reminderList.appendChild(li);
@@ -348,8 +349,8 @@ export function createUiRenderer(
     },
     updateSyncStatus(): void {
       const state = getState();
-      elements.syncStatusLabel.textContent = `Sync: ${navigator.onLine ? "online" : "offline"}`;
-      elements.syncQueueCount.textContent = `Queue: ${state.pendingSessions.length}`;
+      elements.syncStatusLabel.textContent = `${callbacks.t("sync.sync")}: ${navigator.onLine ? callbacks.t("sync.online") : callbacks.t("sync.offline")}`;
+      elements.syncQueueCount.textContent = `${callbacks.t("sync.queue")}: ${state.pendingSessions.length}`;
       elements.syncNowBtn.disabled = !navigator.onLine || state.pendingSessions.length === 0;
     },
     updateProgress(): void {
@@ -358,14 +359,14 @@ export function createUiRenderer(
       const done = state.tasks.filter((task) => task.status === "done").length;
       const percent = total ? Math.round((done / total) * 100) : 0;
       elements.progressFill.style.width = `${percent}%`;
-      elements.progressText.textContent = `${done}/${total} done`;
+      elements.progressText.textContent = `${done}/${total} ${callbacks.t("progress.done")}`;
     },
     renderDiagnostics(): void {
       const state = getState();
-      if (elements.diagSchemaVersion) elements.diagSchemaVersion.textContent = `Schema: v${options.schemaVersion}`;
-      if (elements.diagSnapshots) elements.diagSnapshots.textContent = `Snapshots: ${callbacks.getSnapshotsCount()}/3`;
-      if (elements.diagQueue) elements.diagQueue.textContent = `Queue: ${state.pendingSessions.length}`;
-      if (elements.diagNetwork) elements.diagNetwork.textContent = `Network: ${navigator.onLine ? "online" : "offline"}`;
+      if (elements.diagSchemaVersion) elements.diagSchemaVersion.textContent = `${callbacks.t("diag.schema")}: v${options.schemaVersion}`;
+      if (elements.diagSnapshots) elements.diagSnapshots.textContent = `${callbacks.t("diag.snapshots")}: ${callbacks.getSnapshotsCount()}/3`;
+      if (elements.diagQueue) elements.diagQueue.textContent = `${callbacks.t("diag.queue")}: ${state.pendingSessions.length}`;
+      if (elements.diagNetwork) elements.diagNetwork.textContent = `${callbacks.t("diag.network")}: ${navigator.onLine ? callbacks.t("sync.online") : callbacks.t("sync.offline")}`;
     }
   };
 }

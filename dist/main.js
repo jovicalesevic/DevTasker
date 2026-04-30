@@ -8,6 +8,7 @@ import { commitSession as commitSessionToState, flushPendingSessions as flushPen
 import { exportBackupJson as exportBackupJsonFile, importBackupFromFile, resetAppData as resetAllAppData, undoLastDestructiveAction as undoFromSnapshots } from "./backup";
 import { averageLeadTimeHours as averageLeadTimeHoursFromState, calculateWorklogStreak as calculateWorklogStreakFromSessions, latestTaskActivity as latestTaskActivityFromState, nextUpScore as nextUpScoreForTask, predictTodayItems as predictTodayItemsFromState, topBlockers as topBlockersFromSessions, weeklyTrendText as weeklyTrendTextFromState } from "./analytics";
 import { exportWeeklyReport as exportWeeklyReportFile } from "./report";
+import { applyStaticTranslations, getLanguage, setLanguage, t, tf } from "./i18n";
 import { createSnapshotUiController } from "./snapshotUi";
 import { createUiRenderer } from "./ui";
 import { closeHelpModal as hideHelpModal, isHelpModalOpen, openHelpModal as showHelpModal } from "./helpModal";
@@ -51,6 +52,7 @@ const diffModalViewToggleBtn = byIdOptional("diffModalViewToggleBtn");
 const diffModalCancelBtn = byIdOptional("diffModalCancelBtn");
 const diffModalApplyBtn = byIdOptional("diffModalApplyBtn");
 const helpBtn = byIdOptional("helpBtn");
+const languageSelect = byIdOptional("languageSelect");
 const helpModal = byIdOptional("helpModal");
 const helpModalCloseBtn = byIdOptional("helpModalCloseBtn");
 const progressFill = byId("progressFill");
@@ -71,7 +73,8 @@ const diffModalController = createDiffModalController({
     diffModalBody,
     diffModalViewToggleBtn,
     diffModalCancelBtn,
-    escapeHtml
+    escapeHtml,
+    t
 });
 const uiRenderer = createUiRenderer(() => state, {
     activeTaskList,
@@ -120,7 +123,8 @@ const uiRenderer = createUiRenderer(() => state, {
     calculateWorklogStreak,
     weeklyTrendText,
     buildWeeklySummary,
-    getSnapshotsCount: () => getSnapshotsFromStorage(SNAPSHOT_KEY).length
+    getSnapshotsCount: () => getSnapshotsFromStorage(SNAPSHOT_KEY).length,
+    t
 }, {
     defaultProjectName: DEFAULT_PROJECT_NAME,
     schemaVersion: CURRENT_SCHEMA_VERSION
@@ -137,9 +141,15 @@ const snapshotUiController = createSnapshotUiController({
     escapeHtml,
     showToast,
     renderAll,
-    snapshotStorageKey: SNAPSHOT_KEY
+    snapshotStorageKey: SNAPSHOT_KEY,
+    t,
+    tf,
+    locale: () => (getLanguage() === "sr" ? "sr-RS" : "en-US")
 });
 document.addEventListener("DOMContentLoaded", () => {
+    applyStaticTranslations();
+    if (languageSelect)
+        languageSelect.value = getLanguage();
     bindEvents();
     flushPendingSessions();
     renderAll();
@@ -167,6 +177,12 @@ function bindEvents() {
     diffModalCancelBtn?.addEventListener("click", () => diffModalController.close(false));
     diffModalApplyBtn?.addEventListener("click", () => diffModalController.close(true));
     helpBtn?.addEventListener("click", () => showHelpModal(helpModal, helpModalCloseBtn));
+    languageSelect?.addEventListener("change", () => {
+        const next = languageSelect.value === "sr" ? "sr" : "en";
+        setLanguage(next);
+        applyStaticTranslations();
+        renderAll();
+    });
     helpModalCloseBtn?.addEventListener("click", () => hideHelpModal(helpModal));
     diffModal?.addEventListener("click", (event) => {
         if (event.target === diffModal)
@@ -193,7 +209,7 @@ function bindEvents() {
     });
     window.addEventListener("offline", () => {
         updateSyncStatus();
-        showToast("Offline mode: sessions will be queued.");
+        showToast(t("toast.offlineQueued"));
     });
     document.querySelectorAll("[data-tab]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -216,7 +232,7 @@ function handleTaskSubmit(event) {
         dueAt: dueInput.value || null
     });
     if (!draft) {
-        showToast("Task form has invalid data.");
+        showToast(t("toast.taskInvalid"));
         return;
     }
     const project = upsertProject(projectInput.value.trim() || DEFAULT_PROJECT_NAME);
@@ -236,7 +252,7 @@ function handleTaskSubmit(event) {
     saveState();
     taskForm.reset();
     renderAll();
-    showToast("Task added.");
+    showToast(t("toast.taskAdded"));
 }
 function applyTaskTemplate() {
     const templateInput = byId("taskTemplate");
@@ -262,7 +278,7 @@ function applyTaskTemplate() {
         priorityInput.value = "moze";
     }
     titleInput.focus();
-    showToast("Template applied.");
+    showToast(t("toast.templateApplied"));
 }
 function handleSessionSubmit(event) {
     event.preventDefault();
@@ -274,7 +290,7 @@ function handleSessionSubmit(event) {
     const taskId = taskIdInput.value;
     const task = state.tasks.find((item) => item.id === taskId);
     if (!taskId || !task) {
-        showToast("Select a valid task.");
+        showToast(t("toast.selectValidTask"));
         return;
     }
     const payload = validatePendingSessionDraft({
@@ -287,16 +303,16 @@ function handleSessionSubmit(event) {
         queuedAt: nowIso()
     });
     if (!payload) {
-        showToast("Session input has invalid data.");
+        showToast(t("toast.sessionInvalid"));
         return;
     }
     if (navigator.onLine) {
         commitSession(payload);
-        showToast("Session saved.");
+        showToast(t("toast.sessionSaved"));
     }
     else {
         state.pendingSessions.unshift(payload);
-        showToast("Offline: session queued for sync.");
+        showToast(t("toast.sessionQueued"));
     }
     saveState();
     sessionForm.reset();
@@ -540,10 +556,10 @@ function handleManualSync() {
         showToast(`Synced ${flushed} queued session(s).`);
     }
     else if (!navigator.onLine) {
-        showToast("Cannot sync while offline.");
+        showToast(t("toast.cannotSyncOffline"));
     }
     else {
-        showToast("Queue is already empty.");
+        showToast(t("toast.queueEmpty"));
     }
 }
 function showToast(message) {
@@ -554,14 +570,14 @@ function showToast(message) {
     }, 2200);
 }
 function resetPreferences() {
-    const confirmed = window.confirm("Reset UI preferences to default values?");
+    const confirmed = window.confirm(t("confirm.resetPreferences"));
     if (!confirmed)
         return;
     diffModalController.resetViewPreference();
-    showToast("Preferences reset.");
+    showToast(t("toast.preferencesReset"));
 }
 function exportBackupJson() {
-    exportBackupJsonFile(state, showToast);
+    exportBackupJsonFile(state, showToast, tf);
 }
 async function handleImportBackup() {
     const file = importBackupInput.files?.[0];
@@ -581,7 +597,9 @@ async function handleImportBackup() {
             replaceState,
             saveState,
             renderAll,
-            showToast
+            showToast,
+            t,
+            tf
         });
     }
     finally {
@@ -598,7 +616,10 @@ function exportWeeklyReport() {
         weeklyTrend: weeklyTrendText(),
         topBlockers: topBlockers(state.sessions),
         nextUpItems: predictTodayItems(),
-        showToast
+        showToast,
+        t,
+        tf,
+        locale: getLanguage() === "sr" ? "sr-RS" : "en-US"
     });
 }
 function averageLeadTimeHours() {
@@ -616,7 +637,8 @@ function resetAppData() {
         replaceState,
         saveState,
         renderAll,
-        showToast
+        showToast,
+        t
     });
 }
 async function undoLastDestructiveAction() {
@@ -630,7 +652,9 @@ async function undoLastDestructiveAction() {
         replaceState,
         saveState,
         renderAll,
-        showToast
+        showToast,
+        t,
+        tf
     });
 }
 function snapshotCurrentState(reason) {

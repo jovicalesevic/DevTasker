@@ -9,7 +9,7 @@ export function createDiffModalController(deps) {
         const preview = activePreview.mode === "detailed" ? activePreview.detailed : activePreview.compact;
         deps.diffModalBody.innerHTML = renderDiffPreviewHtml(preview, deps.escapeHtml);
         if (deps.diffModalViewToggleBtn) {
-            deps.diffModalViewToggleBtn.textContent = activePreview.mode === "detailed" ? "View: Detailed" : "View: Compact";
+            deps.diffModalViewToggleBtn.textContent = activePreview.mode === "detailed" ? deps.t("diff.viewDetailed") : deps.t("diff.viewCompact");
             deps.diffModalViewToggleBtn.classList.toggle("is-active", activePreview.mode === "detailed");
         }
     }
