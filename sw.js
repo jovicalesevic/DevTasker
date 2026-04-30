@@ -1,4 +1,4 @@
-const CACHE_NAME = "devtasker-v3";
+const CACHE_NAME = "devtasker-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -26,6 +26,9 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const isNavigation = request.mode === "navigate";
+  const url = new URL(request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+  const isAppBundle = isSameOrigin && (url.pathname.includes("/dist/") || url.pathname.endsWith("/style.css"));
 
   if (isNavigation) {
     event.respondWith(
@@ -36,6 +39,21 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
+  if (isAppBundle) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200 && request.method === "GET") {
+            const cloned = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
